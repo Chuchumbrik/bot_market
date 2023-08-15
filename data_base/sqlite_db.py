@@ -56,3 +56,20 @@ async def check_exists_product_by_id(id) :
 		return True 
 	else :
 		return False
+
+async def edit_product_photo(id, photo) :
+	print(f'Редактируем фото в бд с параметрами {id} {photo}')
+	cur.execute('UPDATE `product_catalog` SET `image` = ? WHERE `id` = ?', (photo, id,))
+	base.commit()
+
+async def edit_product_name(id, name) :
+	cur.execute('UPDATE `product_catalog` SET `name` = ? WHERE `id` = ?', (name, id,))
+	base.commit()
+
+async def edit_product_description(id, description) :
+	cur.execute('UPDATE `product_catalog` SET `description` = ? WHERE `id` = ?', (description, id,))
+	base.commit()
+
+async def edit_product_price(id, price) :
+	cur.execute('UPDATE `product_catalog` SET `price` = ? WHERE `id` = ?', (price, id,))
+	base.commit()
