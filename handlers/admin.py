@@ -282,8 +282,8 @@ async def edit_product(callback_query : types.CallbackQuery, state : FSMContext)
 			data['edit_product_id'] = id_product
 			data['edit_user_id'] = callback_query.from_user.id
 			data['state'] = 'FSMEditProducts'
-		await delete_inline_button_callback(callback_query)
 		await edit_product_main(state)
+		await callback_query.answer()
 
 async def edit_product_main(state : FSMContext) :
 	await FSMEditProducts.start.set()
