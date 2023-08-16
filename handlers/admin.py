@@ -5,7 +5,7 @@ from aiogram import types, Dispatcher
 from create_bot import dp, bot
 from data_base import sqlite_db
 from keyboards import admin_kb, kb_admin_edit, kb_admin_edit_load
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from multipledispatch import dispatch
 
 ID = None
@@ -127,6 +127,11 @@ async def load_product_price(message : types.Message, state : FSMContext) :
 	if message.from_user.id == ID :
 		print("price")
 		try :
+			try:
+			    float(message.text)
+			except ValueError:
+			    raise Exception('Мне кажется или в цену затисались буквы?')
+
 			price = round(float(message.text), 2)
 			if len(str(price)) > 10 :
 				raise Exception('Не думаешь, что это слишком дорого?')
@@ -249,6 +254,7 @@ async def delete_inline_button_message(message, state) :
 		except Exception as err :
 			print('message_id - не существует')
 
+
 #Проверка валидности введенного текста
 async def check_valid_text(text) :
 	error = ''
@@ -277,6 +283,8 @@ class FSMEditProducts(StatesGroup) :
 async def edit_product(callback_query : types.CallbackQuery, state : FSMContext) :
 	if callback_query.from_user.id == ID :
 		print("None_edit")
+		await bot.send_message(callback_query.from_user.id, "Вы выбрали этот продукт для редактирования :",\
+											reply_markup = ReplyKeyboardRemove())
 		id_product = callback_query.data.replace('edit ', '')
 		async with state.proxy() as data:
 			data['edit_product_id'] = id_product
@@ -295,7 +303,7 @@ async def edit_product_main(state : FSMContext) :
 	if check_exists_product :
 		edit_product = await sqlite_db.get_product_by_id(id_product)
 		msg = await send_product(id_user, edit_product[1], edit_product[2], edit_product[3], edit_product[4])
-		await msg.edit_reply_markup(reply_markup = admin_kb.kb_admin_edit)
+		await msg.edit_reply_markup(admin_kb.kb_admin_edit)
 		async with state.proxy() as data:
 			data['message_id'] = msg.message_id
 	else : 
@@ -411,6 +419,11 @@ async def cancel_callback_edit_product(callback_query : types.CallbackQuery, sta
 		await bot.send_message(callback_query.from_user.id, 'Редактирование завершено', reply_markup = admin_kb.kb_admin_global)
 		await callback_query.answer()
 
+async def error_command_state(message : types.Message, state : FSMContext) :
+	await message.answer(f'Нет такой команды {message.text}\n')
+	await message.delete()
+	
+
 def register_handlers_admin(dp : Dispatcher) :
 	dp.register_message_handler(start_load_product, commands = ['Загрузить'], state = None)
 	dp.register_callback_query_handler(edit_product, lambda x : x.data and x.data.startswith('edit '), state = None)
@@ -437,5 +450,7 @@ def register_handlers_admin(dp : Dispatcher) :
 	dp.register_message_handler(make_changes_command, is_chat_admin = True)
 	dp.register_callback_query_handler(del_call_back_run, lambda x : x.data and x.data.startswith('del '))
 	dp.register_message_handler(delete_item, commands = ['Удалить'])
+
+	dp.register_message_handler(error_command_state, state = "*")
 
 	
