@@ -5,10 +5,14 @@ from aiogram import types, Dispatcher
 from create_bot import dp, bot
 from data_base import sqlite_db
 from keyboards import admin_kb, kb_admin_edit, kb_admin_edit_load
+from keyboards import client_kb, kb_client
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from multipledispatch import dispatch
+from handlers.auth import Auth
 
 ID = None
+auth = Auth()
+
 
 class FSMAddProducts(StatesGroup) :
     photo = State()
@@ -17,13 +21,13 @@ class FSMAddProducts(StatesGroup) :
     price = State()
 
 async def make_changes_command(message : types.Message) :
-	global ID 
+	global ID, auth
 	ID = message.from_user.id
 	await bot.send_message(message.from_user.id, "Что делаем сегодня?", reply_markup = admin_kb.kb_admin_global)
 	await message.delete()
 
 async def start_load_product(message : types.Message, state : FSMContext) :
-	if message.from_user.id == ID :
+	if auth.check_access_level(message, state, "admin") :
 		print("None")
 		await FSMAddProducts.photo.set()
 		await delete_inline_button_message(message, state)
@@ -422,10 +426,21 @@ async def cancel_callback_edit_product(callback_query : types.CallbackQuery, sta
 async def error_command_state(message : types.Message, state : FSMContext) :
 	await message.answer(f'Нет такой команды {message.text}\n')
 	await message.delete()
+
+async def change_access_level(message : types.Message) :
+	access_level = await sqlite_db.get_access_level(message.from_user.username)
+	print(f'access_level - {access_level}')
+	if access_level == 'admin' :
+		await sqlite_db.delete_admin(message.from_user.username)
+		await message.reply("Вы стали пользователем", reply_markup = client_kb.kb_client)
+	else :
+		await sqlite_db.add_admin(message.from_user.username)
+		await message.reply("Вы стали админом", reply_markup = admin_kb.kb_admin_global)
 	
 
 def register_handlers_admin(dp : Dispatcher) :
 	dp.register_message_handler(start_load_product, commands = ['Загрузить'], state = None)
+	dp.register_message_handler(change_access_level, lambda x : x.text and x.text.startswith('Change access'))
 	dp.register_callback_query_handler(edit_product, lambda x : x.data and x.data.startswith('edit '), state = None)
 	dp.register_callback_query_handler(cancel_callback_load_product, lambda x : x.data and x.data.startswith('cancel'), state = "*")
 	dp.register_callback_query_handler(prev_callback_load_product, lambda x : x.data and x.data.startswith('previous'), state = "*")

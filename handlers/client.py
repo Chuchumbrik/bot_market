@@ -6,7 +6,10 @@ from keyboards import kb_client
 
 async def commands_start(message : types.Message) :
 	try:
-		await bot.send_message(message.from_user.id, 'Приятного аппетита', reply_markup = kb_client)
+		check_exists_user = await sqlite_db.check_exists_user(message.from_user.username)
+		if check_exists_user is not True :
+			await sqlite_db.add_user(message.from_user.username)
+		await bot.send_message(message.from_user.id, 'С чего начнем?', reply_markup = kb_client)
 		await message.delete()
 	except Exception as e:
 		await message.reply(f'Общение с ботом через ЛС, напишите ему: \nhttps://t.me/tryYourBot \n{e}')

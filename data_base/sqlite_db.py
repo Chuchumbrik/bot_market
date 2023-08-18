@@ -73,3 +73,30 @@ async def edit_product_description(id, description) :
 async def edit_product_price(id, price) :
 	cur.execute('UPDATE `product_catalog` SET `price` = ? WHERE `id` = ?', (price, id,))
 	base.commit()
+
+
+
+
+async def check_exists_user(user_name) :
+	users = cur.execute('SELECT Count(*) FROM `users` WHERE `user_name` == ?', (user_name,)).fetchall()[0]
+	if users[0] > 0 :
+		return True 
+	else :
+		return False
+
+async def add_user(user_name) :
+	cur.execute('INSERT INTO users (user_name) VALUES (?)', (user_name,))
+	base.commit() 
+
+async def get_access_level(user_name) :
+	access_level = cur.execute('SELECT `access_level` FROM `users` WHERE `user_name` == ?', (user_name,)).fetchall()[0]
+	print(access_level)
+	return access_level[0]
+	
+async def add_admin(user_name) :
+	cur.execute('UPDATE `users` SET `access_level` = "admin" WHERE `user_name` = ?', (user_name,))
+	base.commit() 
+
+async def delete_admin(user_name) :
+	cur.execute('UPDATE `users` SET `access_level` = "user" WHERE `user_name` = ?', (user_name,))
+	base.commit() 
