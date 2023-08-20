@@ -1,29 +1,28 @@
-from aiogram.dispatcher import FSMContext 
-from multipledispatch import dispatch
-from aiogram import types
+from aiogram.dispatcher import FSMContext
+from create_bot import bot
+from data_base import sqlite_db
+from keyboards import client_kb
+from keyboards import admin_kb
 
 class Auth() :
-	@dispatch(types.Message, FSMContext, str)
-	def check_access_level(message, state, user_access_level) :
-		check = check_access_level_main(message, user_access_level)
-		if check is not True:
-			state.finish()
+	async def check_access_level(user_name, user_id, state: FSMContext, user_access_level: str):
+		check = await Auth.check_access_level_main(user_name,user_id, user_access_level)
+		if check is not True and state is not None:
+			await state.finish()
 		return check
 
-	@dispatch(types.Message, str)
-	def check_access_level(message, user_access_level) :
-		return check_access_level_main(message, user_access_level)
-
-	def check_access_level_main(message : types.Message, user_access_level) :
-		access_level = sqlite_db.get_access_level(message.from_user.username)
+	async def check_access_level_main(user_name, user_id, user_access_level):
+		access_level = await sqlite_db.get_access_level(user_name)
 		print(f'access_level - {access_level}')
-		if access_level == user_access_level :
+		if access_level == user_access_level:
 			return True
 		else :
 			if access_level == 'admin' :
-				sqlite_db.add_admin(message.from_user.username)
-				message.reply("Вы стали админом", reply_markup = admin_kb.kb_admin_global)
+				await sqlite_db.add_admin(user_name)
+				await bot.send_message(user_id, "Вы стали админом", reply_markup = admin_kb.kb_admin_global)
 			else :
-				sqlite_db.delete_admin(message.from_user.username)
-				message.reply("Вы стали пользователем", reply_markup = client_kb.kb_client)
+				await sqlite_db.delete_admin(user_name)
+				await bot.send_message(user_id, "Вы стали пользователем", reply_markup = client_kb.kb_client)
 			return False
+
+
