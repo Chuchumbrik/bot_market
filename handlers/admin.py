@@ -39,7 +39,7 @@ async def start_load_product(message: types.Message, state: FSMContext):
 
 async def cancel_callback_load_product(callback_query: types.CallbackQuery, state: FSMContext):
     if await Auth.Auth.check_access_level(callback_query.from_user.username, callback_query.from_user.id, state, "admin"):
-        print("Отмена")
+        print("Cancel")
         current_state = await state.get_state()
         await delete_inline_button_callback(callback_query)
         if current_state is None:
@@ -57,7 +57,7 @@ async def cancel_callback_load_product(callback_query: types.CallbackQuery, stat
 
 async def prev_callback_load_product(callback_query: types.CallbackQuery, state: FSMContext):
     if await Auth.Auth.check_access_level(callback_query.from_user.username, callback_query.from_user.id, state, "admin"):
-        print("Назад")
+        print("prev")
         current_state = await state.get_state()
         if current_state is None:
             return
@@ -90,7 +90,7 @@ async def load_product_photo(message: types.Message, state: FSMContext):
                 data['message_id'] = msg.message_id
         except Exception as err:
             await message.reply(err)
-            print(err)
+
 
 
 async def load_product_name(message: types.Message, state: FSMContext):
@@ -109,7 +109,6 @@ async def load_product_name(message: types.Message, state: FSMContext):
                 data['message_id'] = msg.message_id
         except Exception as err:
             await message.reply(err)
-            print(err)
 
 
 async def load_product_description(message: types.Message, state: FSMContext):
@@ -127,7 +126,6 @@ async def load_product_description(message: types.Message, state: FSMContext):
                 data['message_id'] = msg.message_id
         except Exception as err:
             await message.reply(err)
-            print(err)
 
 
 async def load_product_price(message: types.Message, state: FSMContext):
@@ -155,7 +153,6 @@ async def load_product_price(message: types.Message, state: FSMContext):
             await state.finish()
         except Exception as err:
             await message.reply(err)
-            print(err)
 
 
 async def del_call_back_run(callback_query: types.CallbackQuery):
@@ -249,7 +246,7 @@ async def delete_inline_button_callback(callback_query, state):
                                                 message_id=data['message_id'], \
                                                 reply_markup=InlineKeyboardMarkup())
         except Exception as err:
-            print('message_id - не существует')
+            print('message_id - not found')
 
 
 @dispatch(types.CallbackQuery)
@@ -259,7 +256,7 @@ async def delete_inline_button_callback(callback_query):
                                             message_id=callback_query.message.message_id, \
                                             reply_markup=InlineKeyboardMarkup())
     except Exception as err:
-        print(f'message_id - не существует - {callback_query.message.message_id}')
+        print(f'message_id - not found - {callback_query.message.message_id}')
 
 
 # Удаление inline кнопок у сообщений для типа message
@@ -271,7 +268,7 @@ async def delete_inline_button_message(message, state):
                                                 message_id=data['message_id'], \
                                                 reply_markup=InlineKeyboardMarkup())
         except Exception as err:
-            print('message_id - не существует')
+            print('message_id - not found')
 
 
 # Проверка валидности введенного текста
@@ -356,7 +353,6 @@ async def edit_product_photo_state(message: types.Message, state: FSMContext):
             await edit_product_main(state)
         except Exception as err:
             await message.reply(err)
-            print(err)
 
 
 async def edit_product_name(callback_query: types.CallbackQuery, state: FSMContext):
@@ -382,7 +378,6 @@ async def edit_product_name_state(message: types.Message, state: FSMContext):
             await edit_product_main(state)
         except Exception as err:
             await message.reply(err)
-            print(err)
 
 
 async def edit_product_description(callback_query: types.CallbackQuery, state: FSMContext):
@@ -407,7 +402,6 @@ async def edit_product_description_state(message: types.Message, state: FSMConte
             await edit_product_main(state)
         except Exception as err:
             await message.reply(err)
-            print(err)
 
 
 async def edit_product_price(callback_query: types.CallbackQuery, state: FSMContext):
@@ -435,7 +429,6 @@ async def edit_product_price_state(message: types.Message, state: FSMContext):
             await edit_product_main(state)
         except Exception as err:
             await message.reply(err)
-            print(err)
 
 
 async def cancel_callback_edit_product(callback_query: types.CallbackQuery, state: FSMContext):

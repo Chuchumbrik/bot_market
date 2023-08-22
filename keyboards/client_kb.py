@@ -1,9 +1,8 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-b1 = KeyboardButton('/catalog')
-b2 = KeyboardButton('/start')
-button_change_access_level = KeyboardButton('Change access')
+button_list_product = KeyboardButton('Список товаров')
 
-kb_client = ReplyKeyboardMarkup(resize_keyboard = True, one_time_keyboard = True)
+button_change_access_level_test = KeyboardButton('Change access')
 
-kb_client.row(b2, b1, button_change_access_level)
+kb_client = ReplyKeyboardMarkup(resize_keyboard=True)
+kb_client.row(button_list_product, button_change_access_level_test)
