@@ -3,11 +3,11 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram import types, Dispatcher
 from create_bot import bot
 from data_base import sqlite_db
-from keyboards import admin_kb, kb_admin_edit, kb_admin_edit_load
-from keyboards import client_kb, kb_client
+from helpers.helper import delete_inline_button_message
+from keyboards import admin_kb
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from multipledispatch import dispatch
-from handlers.auth import Auth
+from helpers.auth import Auth
 
 ID = None
 
@@ -90,7 +90,6 @@ async def load_product_photo(message: types.Message, state: FSMContext):
                 data['message_id'] = msg.message_id
         except Exception as err:
             await message.reply(err)
-
 
 
 async def load_product_name(message: types.Message, state: FSMContext):
@@ -186,100 +185,6 @@ async def delete_item(message: types.Message):
                                    reply_markup=admin_kb.kb_admin_global)
         else:
             await message.answer('В данный момент продуктов нет', reply_markup=admin_kb.kb_admin_global)
-
-
-@dispatch(types.CallbackQuery, FSMContext)
-async def send_text_state(callback_query, state):
-    text_state = await text_by_state(state)
-    await delete_inline_button_callback(callback_query, state)
-    if text_state != '':
-        async with state.proxy() as data:
-            this_state_group = data['state']
-        if this_state_group == 'FSMAddProducts':
-            msg = await bot.send_message(callback_query.from_user.id, text_state, reply_markup=admin_kb.kb_admin_load)
-        else:
-            msg = await bot.send_message(callback_query.from_user.id, text_state,
-                                         reply_markup=admin_kb.kb_admin_edit_load)
-        async with state.proxy() as data:
-            data['message_id'] = msg.message_id
-            print(data['message_id'])
-        return msg
-
-
-@dispatch(types.Message, FSMContext)
-async def send_text_state(message, state):
-    text_state = await text_by_state(state)
-    await delete_inline_button_message(message, state)
-
-    if text_state != '':
-        msg = await bot.send_message(message.from_user.id, text_state, reply_markup=admin_kb.kb_admin_load)
-        async with state.proxy() as data:
-            data['message_id'] = msg.message_id
-            print(data['message_id'])
-        return msg
-
-
-async def text_by_state(state: FSMContext):
-    current_state = await state.get_state()
-    text_state = 'Нет текста!'
-    print(current_state)
-    if current_state is None:
-        text_state = ''
-    if current_state == "FSMAddProducts:photo" or current_state == "FSMEditProducts:photo":
-        text_state = 'Загрузи фото'
-    if current_state == "FSMAddProducts:name" or current_state == "FSMEditProducts:name":
-        text_state = 'Теперь название продукта'
-    if current_state == "FSMAddProducts:description" or current_state == "FSMEditProducts:description":
-        text_state = 'Теперь описание продукта'
-    if current_state == "FSMAddProducts:price" or current_state == "FSMEditProducts:price":
-        text_state = 'Теперь цену продукта'
-
-    return text_state
-
-
-# Удаление inline кнопок у сообщений для типа callback_query
-@dispatch(types.CallbackQuery, FSMContext)
-async def delete_inline_button_callback(callback_query, state):
-    async with state.proxy() as data:
-        try:
-            await bot.edit_message_reply_markup(chat_id=callback_query.message.chat.id, \
-                                                message_id=data['message_id'], \
-                                                reply_markup=InlineKeyboardMarkup())
-        except Exception as err:
-            print('message_id - not found')
-
-
-@dispatch(types.CallbackQuery)
-async def delete_inline_button_callback(callback_query):
-    try:
-        await bot.edit_message_reply_markup(chat_id=callback_query.message.chat.id, \
-                                            message_id=callback_query.message.message_id, \
-                                            reply_markup=InlineKeyboardMarkup())
-    except Exception as err:
-        print(f'message_id - not found - {callback_query.message.message_id}')
-
-
-# Удаление inline кнопок у сообщений для типа message
-@dispatch(types.Message, FSMContext)
-async def delete_inline_button_message(message, state):
-    async with state.proxy() as data:
-        try:
-            await bot.edit_message_reply_markup(chat_id=message.chat.id, \
-                                                message_id=data['message_id'], \
-                                                reply_markup=InlineKeyboardMarkup())
-        except Exception as err:
-            print('message_id - not found')
-
-
-# Проверка валидности введенного текста
-async def check_valid_text(text):
-    error = ''
-    if len(text) > 100:
-        error = 'Капец, оно длинное. Такое даже я читать не стану, а я бот'
-    if len(text) < 3:
-        error = 'И вот ты правда думаешь, что так можно это описать?'
-    if error != '':
-        raise Exception(f'{error}\nПопробуй ввести заново')
 
 
 # Отправка продукта в сообщении
@@ -449,25 +354,16 @@ async def error_command_state(message: types.Message, state: FSMContext):
     await message.delete()
 
 
-async def change_access_level(message: types.Message):
-    access_level = await sqlite_db.get_access_level(message.from_user.username)
-    print(f'access_level - {access_level}')
-    if access_level == 'admin':
-        await sqlite_db.delete_admin(message.from_user.username)
-        await message.reply("Вы стали пользователем", reply_markup=client_kb.kb_client)
-    else:
-        await sqlite_db.add_admin(message.from_user.username)
-        await message.reply("Вы стали админом", reply_markup=admin_kb.kb_admin_global)
+
 
 
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(start_load_product, commands=['Загрузить'], state=None)
-    dp.register_message_handler(change_access_level, lambda x: x.text and x.text.startswith('Change access'))
     dp.register_callback_query_handler(edit_product, lambda x: x.data and x.data.startswith('edit '), state=None)
-    dp.register_callback_query_handler(cancel_callback_load_product, lambda x: x.data and x.data.startswith('cancel'),
-                                       state="*")
-    dp.register_callback_query_handler(prev_callback_load_product, lambda x: x.data and x.data.startswith('previous'),
-                                       state="*")
+    #dp.register_callback_query_handler(cancel_callback_load_product, lambda x: x.data and x.data.startswith('cancel'),
+    #                                   state="*")
+    #dp.register_callback_query_handler(prev_callback_load_product, lambda x: x.data and x.data.startswith('previous'),
+    #                                   state="*")
     dp.register_callback_query_handler(cancel_callback_edit_product,
                                        lambda x: x.data and x.data.startswith('edit_cancel'), state="*")
 
@@ -488,12 +384,12 @@ def register_handlers_admin(dp: Dispatcher):
                                        state=FSMEditProducts.start)
     dp.register_message_handler(edit_product_price_state, state=FSMEditProducts.price)
 
-    dp.register_message_handler(load_product_photo, content_types=['text', 'photo'], state=FSMAddProducts.photo)
-    dp.register_message_handler(load_product_name, state=FSMAddProducts.name)
-    dp.register_message_handler(load_product_description, state=FSMAddProducts.description)
-    dp.register_message_handler(load_product_price, state=FSMAddProducts.price)
-    dp.register_message_handler(make_changes_command, is_chat_admin=True)
-    dp.register_callback_query_handler(del_call_back_run, lambda x: x.data and x.data.startswith('del '))
+    #dp.register_message_handler(load_product_photo, content_types=['text', 'photo'], state=FSMAddProducts.photo)
+    #dp.register_message_handler(load_product_name, state=FSMAddProducts.name)
+    #dp.register_message_handler(load_product_description, state=FSMAddProducts.description)
+    #dp.register_message_handler(load_product_price, state=FSMAddProducts.price)
+    #dp.register_message_handler(make_changes_command, is_chat_admin=True)
+    #dp.register_callback_query_handler(del_call_back_run, lambda x: x.data and x.data.startswith('del '))
     dp.register_message_handler(delete_item, commands=['Удалить'])
 
-    dp.register_message_handler(error_command_state, state="*")
+    #dp.register_message_handler(error_command_state, state="*")
