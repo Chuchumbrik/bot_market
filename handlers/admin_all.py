@@ -9,6 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 from multipledispatch import dispatch
 from helpers.auth import Auth
 
+
 ID = None
 
 
@@ -185,13 +186,6 @@ async def delete_item(message: types.Message):
                                    reply_markup=admin_kb.kb_admin_global)
         else:
             await message.answer('В данный момент продуктов нет', reply_markup=admin_kb.kb_admin_global)
-
-
-# Отправка продукта в сообщении
-async def send_product(message_id, p_photo, p_name, p_description, p_price):
-    message = await bot.send_photo(message_id, p_photo, \
-                                   f'Название: {p_name}\nОписание: {p_description}\nЦена: {p_price} рупи')
-    return message
 
 
 class FSMEditProducts(StatesGroup):
@@ -393,3 +387,6 @@ def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(delete_item, commands=['Удалить'])
 
     #dp.register_message_handler(error_command_state, state="*")
+
+
+

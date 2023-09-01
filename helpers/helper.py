@@ -7,11 +7,17 @@ from multipledispatch import dispatch
 
 # Удаление inline кнопок у сообщений для типа CallbackQuery
 @dispatch(types.CallbackQuery)
-async def delete_inline_button_callback(call):
+async def delete_inline_button_callback(call, state=None):
     try:
-        await bot.edit_message_reply_markup(chat_id=call.message.chat.id,
-                                            message_id=call.message.message_id,
-                                            reply_markup=InlineKeyboardMarkup())
+        if state is None:
+            await bot.edit_message_reply_markup(chat_id=call.message.chat.id,
+                                                message_id=call.message.message_id,
+                                                reply_markup=InlineKeyboardMarkup())
+        else:
+            async with state.proxy() as data:
+                await bot.edit_message_reply_markup(chat_id=call.message.chat.id,
+                                                    message_id=data['message_id'],
+                                                    reply_markup=InlineKeyboardMarkup())
     except Exception as err:
         print(f'message_id - not found - \n{call.message.message_id} - \n{err}')
 

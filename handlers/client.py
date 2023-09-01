@@ -2,6 +2,7 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher import filters
 from create_bot import dp, bot
 from data_base import sqlite_db, sqlite_db_user
+from helpers.projector import send_product
 from keyboards import kb_client
 from dictionaries.dictionaries_commands import DICTIONARY_CATALOG
 
@@ -17,11 +18,11 @@ async def commands_start(message: types.Message):
 
 
 async def get_catalog_product(message: types.Message):
-    check_exists_products = sqlite_db_user.check_exists_product_catalog_user()
+    check_exists_products = await sqlite_db_user.check_exists_product_catalog_user()
     if check_exists_products:
         catalog_products = await sqlite_db_user.get_product_catalog_user()
-        for ret in catalog_products:
-            await bot.send_photo(message.from_user.id, ret[1], f'{ret[2]}\nОписание: {ret[3]}\nЦена: {ret[4]}\nКоличество: {ret[6]}')
+        for item in catalog_products:
+            await send_product(message.from_user.id, item[1], item[2], item[3], item[4], item[6])
     else:
         await message.answer('В данный момент товаров нет', reply_markup=kb_client.kb_admin_global)
 

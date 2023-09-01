@@ -1,5 +1,7 @@
 from aiogram import types
 
+from dictionaries.dictionaries_commands import DICTIONARY_ADD_PRODUCT_IS_HIDDEN_YES, DICTIONARY_ADD_PRODUCT_IS_HIDDEN_NO
+
 
 # Проверка валидности типа фотографии
 async def validate_photo(message: types.Message):
@@ -42,10 +44,6 @@ async def validate_count(text):
 
 # Проверка валидности скрытости товара
 async def validate_is_hidden(text):
-    response_options = [
-        'Да',
-        'Нет'
-    ]
-
-    if text is not response_options:
-        raise Exception('Не понимаю, Да или Нет?')
+    if text is not DICTIONARY_ADD_PRODUCT_IS_HIDDEN_YES:
+        if text is not DICTIONARY_ADD_PRODUCT_IS_HIDDEN_NO:
+            raise Exception('Не понимаю, Да или Нет?')

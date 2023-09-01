@@ -15,9 +15,12 @@ DICTIONARY_ADD_PRODUCT = [
 ]
 
 
-DICTIONARY_ADD_PRODUCT_IS_HIDDEN = [
+DICTIONARY_ADD_PRODUCT_IS_HIDDEN_YES = [
     'Да',
-    'Нет',
     'Yes',
+]
+
+DICTIONARY_ADD_PRODUCT_IS_HIDDEN_NO = [
+    'Нет',
     'No'
 ]

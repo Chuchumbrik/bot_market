@@ -23,16 +23,19 @@ kb_admin_add_edit = InlineKeyboardMarkup()
 kb_admin_add_edit.add(ib_cancel_add_product)
 
 
-i_button_photo_edit_product = InlineKeyboardButton('Фото', callback_data='edit_photo')
-i_button_name_edit_product = InlineKeyboardButton('Название', callback_data='edit_name')
-i_button_description_edit_product = InlineKeyboardButton('Описание', callback_data='edit_description')
-i_button_price_edit_product = InlineKeyboardButton('Цена', callback_data='edit_price')
-i_button_cancel_edit_product = InlineKeyboardButton('Закончить редактирование', callback_data='edit_cancel')
+ib_photo_edit_product = InlineKeyboardButton('Фото', callback_data='edit_photo')
+ib_name_edit_product = InlineKeyboardButton('Название', callback_data='edit_name')
+ib_description_edit_product = InlineKeyboardButton('Описание', callback_data='edit_description')
+ib_price_edit_product = InlineKeyboardButton('Цена', callback_data='edit_price')
+ib_count_edit_product = InlineKeyboardButton('Количество', callback_data='edit_count')
+ib_is_hidden_edit_product = InlineKeyboardButton('Видимость', callback_data='edit_is_hidden')
+ib_cancel_edit_product = InlineKeyboardButton('Сохранить', callback_data='edit_cancel')
 
 kb_admin_edit = InlineKeyboardMarkup()
-kb_admin_edit.row(i_button_photo_edit_product, i_button_name_edit_product, \
-                  i_button_description_edit_product, i_button_price_edit_product)
-kb_admin_edit.row(i_button_cancel_edit_product)
+kb_admin_edit.row(ib_photo_edit_product, ib_name_edit_product)
+kb_admin_edit.row(ib_description_edit_product, ib_price_edit_product,)
+kb_admin_edit.row(ib_count_edit_product, ib_is_hidden_edit_product)
+kb_admin_edit.row(ib_cancel_edit_product)
 
 kb_admin_edit_load = InlineKeyboardMarkup()
 kb_admin_edit_load.row(ib_cancel_add_product)
