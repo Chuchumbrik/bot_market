@@ -44,6 +44,6 @@ async def validate_count(text):
 
 # Проверка валидности скрытости товара
 async def validate_is_hidden(text):
-    if text is not DICTIONARY_ADD_PRODUCT_IS_HIDDEN_YES:
-        if text is not DICTIONARY_ADD_PRODUCT_IS_HIDDEN_NO:
+    if text.casefold() not in map(str.casefold, DICTIONARY_ADD_PRODUCT_IS_HIDDEN_YES):
+        if text.casefold() not in map(str.casefold, DICTIONARY_ADD_PRODUCT_IS_HIDDEN_NO):
             raise Exception('Не понимаю, Да или Нет?')

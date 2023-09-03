@@ -8,7 +8,7 @@ from helpers.auth.Auth import Auth
 from dictionaries.dictionaries_commands import DICTIONARY_ADD_PRODUCT, DICTIONARY_ADD_PRODUCT_IS_HIDDEN_YES
 from helpers import projector
 from helpers.helper import delete_inline_button_message, delete_inline_button_callback
-from helpers.projector import send_product
+from helpers.projector import send_product_admin
 from helpers.validate import validate_photo, validate_text, validate_price, validate_count, validate_is_hidden
 from keyboards import admin_kb
 
@@ -34,6 +34,7 @@ async def start_add_product(message: types.Message, state: FSMContext):
             data['price'] = None
             data['count'] = None
             data['isHidden'] = None
+            data['keyboard'] = 'create'
 
         await controller_state_add_product(message, state)
 
@@ -146,21 +147,21 @@ async def add_product_is_hidden(message: types.Message, state: FSMContext):
 async def change_add_product(chat_id, state: FSMContext):
     async with state.proxy() as data:
         await FSMAddProducts.change.set()
-        await send_product(chat_id, data['photo'], data['name'], data['description'], data['price'], data['count'], "edit")
+        await send_product_admin(chat_id, data['photo'], data['name'], data['description'],
+                                 data['price'], data['count'], data['isHidden'], data['keyboard'])
 
 
 async def controller_state_add_product(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         id_p = data['id']
+    await delete_inline_button_message(message, state)
     if id_p is None:
-        await delete_inline_button_message(message, state)
-
         if state is None:
             await FSMAddProducts.photo.set()
         else:
             await FSMAddProducts.next()
 
-        msg = await projector.send_text_state(message, state)
+        msg = await projector.send_text_state(message.from_user.id, state)
         async with state.proxy() as data:
             data['message_id'] = msg.message_id
     else:
@@ -171,7 +172,6 @@ async def controller_state_add_product(message: types.Message, state: FSMContext
 async def controller_state_edit_product(call: types.CallbackQuery, state: FSMContext):
     if await Auth.check_access_level(call.from_user.username, call.from_user.id, state, "admin"):
         await delete_inline_button_callback(call)
-        #await delete_inline_button_callback(call, state)
 
         edit_code = call.data.replace('edit_', '')
         if edit_code == 'photo':
@@ -188,14 +188,17 @@ async def controller_state_edit_product(call: types.CallbackQuery, state: FSMCon
             await FSMAddProducts.isHidden.set()
 
         if edit_code == 'cancel':
+            await state.finish()
+            await bot.send_message(call.from_user.id, 'Операция отменена',
+                                   reply_markup=admin_kb.kb_admin_global)
+        elif edit_code == 'save':
             await add_product_finish(call, state)
         else:
-            msg = await projector.send_text_state(call, state)
+            msg = await projector.send_text_state(call.from_user.id, state)
             async with state.proxy() as data:
                 data['message_id'] = msg.message_id
 
         await call.answer()
-
 
 
 async def prev_callback_add_product(call: types.CallbackQuery, state: FSMContext):
@@ -203,29 +206,33 @@ async def prev_callback_add_product(call: types.CallbackQuery, state: FSMContext
         print(f"prev_callback_add_product -\n state: {state}\nmessage: {call}")
         current_state = await state.get_state()
         if current_state == 'FSMAddProducts:photo':
+            await delete_inline_button_callback(call)
             await cancel_callback_add_product(call, state)
             await call.answer()
             return
-        await delete_inline_button_message(call, state)
+        await delete_inline_button_callback(call)
         await FSMAddProducts.previous()
         await call.answer('Вернулись на шаг назад')
+        msg = await projector.send_text_state(call.from_user.id, state)
+        async with state.proxy() as data:
+            data['message_id'] = msg.message_id
 
 
 async def cancel_callback_add_product(call: types.CallbackQuery, state: FSMContext):
     if await Auth.check_access_level(call.from_user.username, call.from_user.id, state, "admin"):
         print(f"cancel_callback_add_product -\n state: {state}\nmessage: {call}")
-        await delete_inline_button_message(call, state)
+        await delete_inline_button_callback(call)
         await state.finish()
         await bot.send_message(call.from_user.id, 'Операция отменена',
                                reply_markup=admin_kb.kb_admin_global)
 
 
 async def add_product_finish(call: types.CallbackQuery, state: FSMContext):
-     if await Auth.check_access_level(call.from_user.username, call.from_user.id, state, "admin"):
-         async with state.proxy() as data:
+    if await Auth.check_access_level(call.from_user.username, call.from_user.id, state, "admin"):
+        async with state.proxy() as data:
             await sqlite_db_admin.add_product_catalog(state)
             await bot.send_message(call.from_user.id, f"Продукт успешно добавлен -\n{data}",
-                                           reply_markup=admin_kb.kb_admin_global)
+                                   reply_markup=admin_kb.kb_admin_global)
             await state.finish()
 
 
@@ -243,7 +250,9 @@ def register_handlers_admin_add(dp: Dispatcher):
     dp.register_message_handler(add_product_price, state=FSMAddProducts.price)
     dp.register_message_handler(add_product_count, state=FSMAddProducts.count)
     dp.register_message_handler(add_product_is_hidden, state=FSMAddProducts.isHidden)
-    dp.register_callback_query_handler(add_product_is_hidden_call, filters.Text(startswith='is_hidden', ignore_case=True), state=FSMAddProducts.isHidden)
+    dp.register_callback_query_handler(add_product_is_hidden_call,
+                                       filters.Text(startswith='is_hidden', ignore_case=True),
+                                       state=FSMAddProducts.isHidden)
 
     dp.register_callback_query_handler(controller_state_edit_product, lambda x: x.data and x.data.startswith('edit_'),
                                        state=FSMAddProducts.change)
