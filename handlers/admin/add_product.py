@@ -34,7 +34,8 @@ async def start_add_product(message: types.Message, state: FSMContext):
             data['price'] = None
             data['count'] = None
             data['isHidden'] = None
-            data['keyboard'] = 'create'
+            data['process'] = 'create'
+            data['keyboards'] = 'create'
 
         await controller_state_add_product(message, state)
 
@@ -42,7 +43,6 @@ async def start_add_product(message: types.Message, state: FSMContext):
 async def add_product_photo(message: types.Message, state: FSMContext):
     if await Auth.check_access_level(message.from_user.username, message.from_user.id, state, "admin"):
         print(f"add_product_photo -\n state: {state}\nmessage: {message}")
-
         try:
             await validate_photo(message)
             async with state.proxy() as data:
@@ -55,7 +55,6 @@ async def add_product_photo(message: types.Message, state: FSMContext):
 async def add_product_name(message: types.Message, state: FSMContext):
     if await Auth.check_access_level(message.from_user.username, message.from_user.id, state, "admin"):
         print(f"add_product_name -\n state: {state}\nmessage: {message}")
-
         try:
             await validate_text(message.text)
             async with state.proxy() as data:
@@ -99,6 +98,14 @@ async def add_product_count(message: types.Message, state: FSMContext):
             await validate_count(message.text)
             async with state.proxy() as data:
                 data['count'] = message.text
+
+            if int(message.text) == 0:
+                async with state.proxy() as data:
+                    data['isHidden'] = 1
+                    data['id'] = -1
+                    await bot.send_message(message.from_user.id,
+                                           "Количество товаров = 0\nВидимость автоматически проставлена в 0 (Не виден пользователю)")
+
             await controller_state_add_product(message, state)
         except Exception as err:
             await message.reply(err)
@@ -138,6 +145,7 @@ async def add_product_is_hidden(message: types.Message, state: FSMContext):
             async with state.proxy() as data:
                 data['isHidden'] = is_hidden
                 data['id'] = -1
+
             await delete_inline_button_message(message, state)
             await change_add_product(message.from_user.id, state)
         except Exception as err:
@@ -146,14 +154,16 @@ async def add_product_is_hidden(message: types.Message, state: FSMContext):
 
 async def change_add_product(chat_id, state: FSMContext):
     async with state.proxy() as data:
+        data['keyboards'] = 'edit'
         await FSMAddProducts.change.set()
         await send_product_admin(chat_id, data['photo'], data['name'], data['description'],
-                                 data['price'], data['count'], data['isHidden'], data['keyboard'])
+                                 data['price'], data['count'], data['isHidden'], data['process'])
 
 
 async def controller_state_add_product(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         id_p = data['id']
+        keyboard = data['keyboards']
     await delete_inline_button_message(message, state)
     if id_p is None:
         if state is None:
@@ -161,7 +171,7 @@ async def controller_state_add_product(message: types.Message, state: FSMContext
         else:
             await FSMAddProducts.next()
 
-        msg = await projector.send_text_state(message.from_user.id, state)
+        msg = await projector.send_text_state(message.from_user.id, state, keyboard)
         async with state.proxy() as data:
             data['message_id'] = msg.message_id
     else:
@@ -194,7 +204,9 @@ async def controller_state_edit_product(call: types.CallbackQuery, state: FSMCon
         elif edit_code == 'save':
             await add_product_finish(call, state)
         else:
-            msg = await projector.send_text_state(call.from_user.id, state)
+            async with state.proxy() as data:
+                keyboard = data['keyboards']
+            msg = await projector.send_text_state(call.from_user.id, state, keyboard)
             async with state.proxy() as data:
                 data['message_id'] = msg.message_id
 
@@ -205,15 +217,25 @@ async def prev_callback_add_product(call: types.CallbackQuery, state: FSMContext
     if await Auth.check_access_level(call.from_user.username, call.from_user.id, state, "admin"):
         print(f"prev_callback_add_product -\n state: {state}\nmessage: {call}")
         current_state = await state.get_state()
+        print(current_state)
+        async with state.proxy() as data:
+            keyboard = data['keyboards']
+        if keyboard == 'edit':
+            await delete_inline_button_callback(call)
+            await change_add_product(call.from_user.id, state)
+            await call.answer()
+            return
+
         if current_state == 'FSMAddProducts:photo':
             await delete_inline_button_callback(call)
             await cancel_callback_add_product(call, state)
             await call.answer()
             return
+
         await delete_inline_button_callback(call)
         await FSMAddProducts.previous()
         await call.answer('Вернулись на шаг назад')
-        msg = await projector.send_text_state(call.from_user.id, state)
+        msg = await projector.send_text_state(call.from_user.id, state, keyboard)
         async with state.proxy() as data:
             data['message_id'] = msg.message_id
 

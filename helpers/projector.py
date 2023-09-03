@@ -3,14 +3,20 @@ from keyboards import admin_kb
 from aiogram.dispatcher import FSMContext
 
 
-async def send_text_state(chat_id, state):
+async def send_text_state(chat_id, state, keyboard=None):
     text_state = await text_by_state(state)
     if text_state != '':
         current_state = await state.get_state()
-        if current_state == 'FSMAddProducts:isHidden':
-            return await bot.send_message(chat_id, text_state, reply_markup=admin_kb.kb_ib_ih_admin_add)
-        else:
-            return await bot.send_message(chat_id, text_state, reply_markup=admin_kb.kb_ib_admin_add)
+        if keyboard == 'create':
+            if current_state == 'FSMAddProducts:isHidden':
+                return await bot.send_message(chat_id, text_state, reply_markup=admin_kb.kb_ib_ih_admin_add)
+            else:
+                return await bot.send_message(chat_id, text_state, reply_markup=admin_kb.kb_ib_admin_add)
+        elif keyboard == 'edit':
+            if current_state == 'FSMAddProducts:isHidden':
+                return await bot.send_message(chat_id, text_state, reply_markup=admin_kb.kb_ib_ih_admin_edit)
+            else:
+                return await bot.send_message(chat_id, text_state, reply_markup=admin_kb.kb_ib_admin_edit)
     else:
         return await bot.send_message(chat_id, "Произошла ошибка, как ты нахуй это сделал?")
 

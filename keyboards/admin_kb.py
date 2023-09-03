@@ -18,12 +18,17 @@ kb_ib_admin_add.row(ib_prev_add_product, ib_cancel_add_product)
 kb_ib_admin_edit = InlineKeyboardMarkup()
 kb_ib_admin_edit.row(ib_prev_add_product)
 
-# Клавиатура inline меню для редактирования поля isHidden
+# Клавиатура inline меню для редактирования поля isHidden - Создание
 ib_is_hidden_yes_add_product = InlineKeyboardButton('Да', callback_data='is_hidden_yes')
 ib_is_hidden_no_add_product = InlineKeyboardButton('Нет', callback_data='is_hidden_no')
 kb_ib_ih_admin_add = InlineKeyboardMarkup()
 kb_ib_ih_admin_add.row(ib_is_hidden_yes_add_product, ib_is_hidden_no_add_product)
 kb_ib_ih_admin_add.row(ib_prev_add_product, ib_cancel_add_product)
+
+# Клавиатура inline меню для редактирования поля isHidden - Редактирование
+kb_ib_ih_admin_edit = InlineKeyboardMarkup()
+kb_ib_ih_admin_edit.row(ib_is_hidden_yes_add_product, ib_is_hidden_no_add_product)
+kb_ib_ih_admin_edit.row(ib_prev_add_product)
 
 # Не понятно (
 kb_admin_add_edit = InlineKeyboardMarkup()

@@ -27,6 +27,10 @@ async def validate_price(text):
     except ValueError:
         raise Exception('Мне кажется или в цену затисались буквы / символы?')
 
+    if price == 0:
+        raise Exception('Не думаю, что ты хочешь сделать его бесплатным')
+    if price < 0:
+        raise Exception('То есть мы еще и доплачивать должны?')
     if len(str(price)) > 10:
         raise Exception('Не думаешь, что это слишком дорого?')
 
@@ -37,6 +41,9 @@ async def validate_count(text):
         count = int(text)
     except ValueError:
         raise Exception('Мне кажется или в количество затисались буквы / символы?')
+
+    if count < 0:
+        raise Exception('Мы уже кому-то должны эти товары?')
 
     if len(str(count)) > 10:
         raise Exception('Не думаешь, что этого излишне много?')
